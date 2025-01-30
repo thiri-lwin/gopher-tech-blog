@@ -1,0 +1,195 @@
+/* General Styles */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f4f7fa;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensures the page takes at least the full height of the viewport */
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Header Styles */
+header {
+  background-color: #333;
+  color: white;
+  padding: 10px 0;
+}
+
+header nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+}
+
+header nav .logo a {
+  font-size: 24px;
+  font-weight: 500;
+  color: white;
+}
+
+header nav ul {
+  display: flex;
+  gap: 25px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+header nav ul li {
+  display: inline;
+}
+
+header nav ul li a {
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+header nav ul li a:hover {
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  header nav {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  header nav ul {
+    flex-direction: column;
+  }
+}
+
+/* Hero Section */
+.hero {
+  background-color: #007bff;
+  color: white;
+  text-align: center;
+  padding: 30px 20px; /* Adjusted padding */
+  
+}
+
+.hero h1 {
+  font-size: 36px;
+  margin: 0;
+}
+
+.hero p {
+  font-size: 18px;
+}
+
+/* Blog Post List */
+.blog-posts {
+  padding: 20px;
+  background-color: white;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.blog-posts h2 {
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+.blog-posts ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.blog-posts ul li {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+}
+
+.blog-posts ul li:hover {
+  background-color: #f1f1f1;
+}
+
+.blog-posts .post-link h3 {
+  font-size: 22px;
+  margin: 0;
+  color: #007bff;
+}
+
+.blog-posts .post-link p {
+  color: #666;
+}
+
+/* Single Post Page */
+.single-post {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.single-post h1 {
+  font-size: 32px;
+}
+
+.single-post .content {
+  margin-top: 20px;
+  line-height: 1.6;
+}
+
+/* Footer */
+footer {
+  background-color: #333;
+  color: white;
+  padding: 20px 0;
+  text-align: center;
+  margin-top: auto; /* Ensures the footer stays at the bottom */
+}
+
+/* Remove unnecessary bottom margin and padding */
+footer p {
+  margin: 0;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 28px;
+  }
+
+  .hero p {
+    font-size: 16px;
+  }
+
+  header nav ul {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .blog-posts {
+    padding: 15px;
+  }
+
+  .blog-posts h2 {
+    font-size: 24px;
+  }
+
+  .single-post {
+    padding: 15px;
+    max-width: 100%;
+  }
+}
