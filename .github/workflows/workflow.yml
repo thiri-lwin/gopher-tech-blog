@@ -1,58 +1,56 @@
-name: Go CI/CD with Heroku
+name: Deploy to Heroku
 
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - main  
 
 jobs:
   build:
-    name: Build and Test
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-latest 
+    
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 1.23
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.23'  
 
-    - name: Install Dependencies
-      run: go mod tidy
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-    - name: Run Tests
-      run: go test ./...
+      - name: Install dependencies
+        run: |
+          go mod tidy  # Ensures that all dependencies are properly downloaded and updated
 
-    - name: Log in to Heroku Container Registry
-      if: success() # Only run if tests pass
-      env:
-        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-      run: |
-        echo "Logging in to Heroku container registry..."
-        echo "$HEROKU_API_KEY" | docker login --username=_ --password-stdin registry.heroku.com
+      - name: Run unit tests
+        run: |
+          go test -v ./...  # Run all unit tests in the repository
+        continue-on-error: false  
 
-    - name: Build Docker Image
-      if: success() # Ensure docker build only runs if the previous step succeeds
-      run: |
-        docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web .
+      - name: Log into Heroku Container Registry
+        run: |
+          echo ${{ secrets.HEROKU_API_KEY }} | docker login --username=_ --password-stdin registry.heroku.com
+        if: success()
 
-    - name: Push Docker Image to Heroku
-      if: success() # Only push if the docker build succeeds
-      run: |
-        docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
+      - name: Build Docker image
+        run: |
+          docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web .
+        if: success() 
 
-    - name: Release Heroku App
-      if: success() # Release only if previous steps succeeded
-      env:
-        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-      run: |
-        curl -n -X PATCH https://api.heroku.com/apps/${{ secrets.HEROKU_APP_NAME }}/formation \
-          -d '{"updates":[{"type":"web","docker_image":"'$(docker inspect registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web:latest --format={{.Id}})'"}]}' \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer $HEROKU_API_KEY" \
-          -H "Accept: application/vnd.heroku+json; version=3"
+      - name: Push Docker image to Heroku
+        run: |
+          docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
+        if: success() 
+
+      - name: Release Docker image on Heroku
+        run: |
+          heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
+        if: success()  
