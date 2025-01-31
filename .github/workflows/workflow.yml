@@ -1,0 +1,67 @@
+name: Go CI/CD with Heroku
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.19
+
+    - name: Install Dependencies
+      run: go mod tidy
+
+    - name: Run Tests
+      run: go test ./...
+
+    - name: Log in to Heroku Container Registry
+      if: success() # Only run if tests pass
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      run: |
+        echo "Logging in to Heroku container registry..."
+        echo "$HEROKU_API_KEY" | docker login --username=_ --password-stdin registry.heroku.com
+
+    - name: Build Docker Image
+      if: success() # Ensure docker build only runs if the previous step succeeds
+      run: |
+        docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web .
+
+    - name: Push Docker Image to Heroku
+      if: success() # Only push if the docker build succeeds
+      run: |
+        docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
+
+    - name: Release Heroku App
+      if: success() # Release only if previous steps succeeded
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      run: |
+        curl -n -X PATCH https://api.heroku.com/apps/${{ secrets.HEROKU_APP_NAME }}/formation \
+          -d '{"updates":[{"type":"web","docker_image":"'$(docker inspect registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web:latest --format={{.Id}})'"}]}' \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $HEROKU_API_KEY" \
+          -H "Accept: application/vnd.heroku+json; version=3"
+
+    - name: Run Container Locally for Testing (Optional)
+      if: success() # Only run locally if all steps succeeded
+      env:
+        PORT: 8080
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      run: |
+        docker run -p 8080:8080 -e PORT=8080 -e DB_USER=$DB_USER -e DB_PASSWORD=$DB_PASSWORD registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web

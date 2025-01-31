@@ -1,1 +1,1 @@
-web: go run ./cmd/server/main.go
+web: ./gopher-tech-blog
