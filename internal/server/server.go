@@ -11,7 +11,7 @@ import (
 	"github.com/thiri-lwin/gopher-tech-blog/internal/repo"
 )
 
-func New() *gin.Engine {
+func New(dbUser, dbPassword string) *gin.Engine {
 	router := gin.New()
 
 	tmpl, err := loadTemplates("templates")
@@ -27,10 +27,13 @@ func New() *gin.Engine {
 
 	//public := router.Group("/public/v1")
 
-	db := repo.New()
+	db := repo.New(dbUser, dbPassword)
 	postHandler := handlers.NewHandler(db, tmpl)
 	router.GET("/", postHandler.GetPosts)
-	router.GET("/post/:id", postHandler.GetPost) // Post page route
+	router.GET("/index", postHandler.GetPosts)       // Home page route
+	router.GET("/about", postHandler.ServeAbout)     // About page route
+	router.GET("/contact", postHandler.ServeContact) // Contact page route
+	router.GET("/post/:id", postHandler.GetPost)     // Post page route
 
 	return router
 }

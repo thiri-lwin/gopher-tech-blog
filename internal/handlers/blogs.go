@@ -34,3 +34,13 @@ func (h Handler) GetPost(c *gin.Context) {
 		"post": post,
 	})
 }
+
+// ServeAbout serves the about page
+func (h Handler) ServeAbout(c *gin.Context) {
+	h.tmpl.ExecuteTemplate(c.Writer, "about.html", nil)
+}
+
+// ServeContact serves the contact page
+func (h Handler) ServeContact(c *gin.Context) {
+	h.tmpl.ExecuteTemplate(c.Writer, "contact.html", nil)
+}
