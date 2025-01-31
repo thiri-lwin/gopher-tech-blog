@@ -1,15 +1,20 @@
 name: Continuous Deployment
 
 on:
-  push:
-    branches:
-      - main  
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types:
+      - completed
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest 
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Install Heroku CLI
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
@@ -17,21 +22,17 @@ jobs:
       - name: Log into Heroku Container Registry
         run: |
           echo ${{ secrets.HEROKU_API_KEY }} | docker login --username=_ --password-stdin registry.heroku.com
-        if: success()
 
       - name: Build Docker image
         run: |
           docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web .
-        if: success() 
 
       - name: Push Docker image to Heroku
         run: |
           docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
-        if: success() 
 
       - name: Release Docker image on Heroku
         run: |
           heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
-        if: success()
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
