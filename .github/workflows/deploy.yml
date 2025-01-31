@@ -33,3 +33,5 @@ jobs:
         run: |
           heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
         if: success()
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
