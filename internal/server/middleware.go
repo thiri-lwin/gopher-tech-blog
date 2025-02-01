@@ -37,7 +37,7 @@ func rateLimitMiddleware(c *gin.Context) {
 			"BackgroundImage": "/static/img/error-bg.jpg",
 			"Heading":         "Error",
 			"Subheading":      "Too many requests, please slow down.",
-			"Status":          "You've hit the limit. Contact us for unlimit access!",
+			"Status":          "You've hit the limit. Contact us for unlimited access!",
 		}
 		tmpl.ExecuteTemplate(c.Writer, "error.html", data)
 		c.Abort()

@@ -6,8 +6,7 @@ import (
 	"log"
 	"time"
 
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type Repo interface {
@@ -17,65 +16,39 @@ type Repo interface {
 }
 
 type repo struct {
-	db *mongo.Database
+	db *pgxpool.Pool
 }
 
 func New(dbURI string) Repo {
 	return &repo{
 		db: connectDB(dbURI),
 	}
-
 }
 
-func connectDB(dbURI string) *mongo.Database {
-	clientOptions := options.Client().ApplyURI(dbURI)
-	//clientOptions.SetTLSConfig(&tls.Config{InsecureSkipVerify: false})
-
-	// Create a new MongoDB client
-	client, err := mongo.NewClient(clientOptions)
+func connectDB(dbURI string) *pgxpool.Pool {
+	config, err := pgxpool.ParseConfig(dbURI)
 	if err != nil {
-		log.Fatalf("Failed to create MongoDB client: %v", err)
+		log.Fatalf("Failed to parse PostgreSQL config: %v", err)
+	}
+
+	// Create a new PostgreSQL connection pool
+	db, err := pgxpool.ConnectConfig(context.Background(), config)
+	if err != nil {
+		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
 
 	// Set a timeout for the connection attempt
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Attempt to connect to MongoDB
-	err = client.Connect(ctx)
+	// Ensure the connection is established
+	err = db.Ping(ctx)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		log.Fatalf("Failed to ping PostgreSQL: %v", err)
 	}
 
-	// Ensure the client is connected
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		log.Fatalf("Failed to ping MongoDB: %v", err)
-	}
+	fmt.Println("Successfully connected to PostgreSQL!")
 
-	// Connect to the desired database
-	db := client.Database("tech_blog_db")
-	fmt.Println("Successfully connected to MongoDB!")
-
-	// Return the database instance
+	// Return the database pool instance
 	return db
-}
-
-type mongoPaginate struct {
-	limit int64
-	page  int64
-}
-
-func newMongoPaginate(limit, page int) *mongoPaginate {
-	return &mongoPaginate{
-		limit: int64(limit),
-		page:  int64(page),
-	}
-}
-
-func (m *mongoPaginate) getPaginatedOpts() *options.FindOptions {
-	opts := options.Find()
-	opts.SetLimit(m.limit)
-	opts.SetSkip(m.page)
-	return opts
 }

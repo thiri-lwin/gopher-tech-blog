@@ -2,73 +2,63 @@ package repo
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
-	"gopkg.in/mgo.v2/bson"
+	"github.com/jackc/pgx"
 )
 
 type Blog struct {
-	ID       string    `bson:"id" json:"id"`
-	Title    string    `bson:"title" json:"title"`
-	Summary  string    `bson:"summary" json:"summary"`
-	Content  string    `bson:"content" json:"content"`
-	Author   string    `bson:"author" json:"author"`
-	PostedAt time.Time `bson:"posted_at" json:"posted_at"`
+	ID       int
+	Title    string
+	Summary  string
+	Content  string
+	Author   string
+	PostedAt time.Time
 	Date     string
 }
 
-func (r *repo) GetBlogs(ctx context.Context, limit, page int) ([]Blog, error) {
-	var blogs []Blog
-
-	collection := r.db.Collection("posts")
-
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	findOptions := newMongoPaginate(limit, page).getPaginatedOpts()
-
-	cursor, err := collection.Find(ctx, bson.M{}, findOptions)
+func (r *repo) GetBlogs(ctx context.Context, limit, offset int) ([]Blog, error) {
+	query := `SELECT id, title, summary, content, author, posted_at FROM posts ORDER BY posted_at DESC LIMIT $1 OFFSET $2`
+	rows, err := r.db.Query(ctx, query, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query blogs: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer rows.Close()
 
-	for cursor.Next(ctx) {
+	var blogs []Blog
+	for rows.Next() {
 		var blog Blog
-		if err := cursor.Decode(&blog); err != nil {
-			log.Println("Error decoding post:", err)
-			continue
+		if err := rows.Scan(&blog.ID, &blog.Title, &blog.Summary, &blog.Content, &blog.Author, &blog.PostedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan blog: %w", err)
 		}
 		blog.Date = blog.PostedAt.Format("January 2, 2006")
 		blogs = append(blogs, blog)
 	}
+
 	return blogs, nil
 }
 
 func (r *repo) GetBlogsCount(ctx context.Context) (int64, error) {
-	collection := r.db.Collection("posts")
-
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	count, err := collection.CountDocuments(ctx, bson.M{})
+	query := `SELECT COUNT(*) FROM posts`
+	var count int64
+	err := r.db.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to count blogs: %w", err)
 	}
 	return count, nil
 }
 
 func (r *repo) GetBlog(ctx context.Context, id string) (Blog, error) {
-	collection := r.db.Collection("posts")
-
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
+	query := `SELECT id, title, summary, content, author, posted_at FROM posts WHERE id = $1`
 	var blog Blog
-	err := collection.FindOne(ctx, bson.M{"id": id}).Decode(&blog)
+	err := r.db.QueryRow(ctx, query, id).Scan(&blog.ID, &blog.Title, &blog.Summary, &blog.Content, &blog.Author, &blog.PostedAt)
 	if err != nil {
-		return Blog{}, err
+		if err == pgx.ErrNoRows {
+			return Blog{}, fmt.Errorf("blog not found")
+		}
+		return Blog{}, fmt.Errorf("failed to query blog: %w", err)
 	}
+	blog.Date = blog.PostedAt.Format("January 2, 2006")
 	return blog, nil
 }

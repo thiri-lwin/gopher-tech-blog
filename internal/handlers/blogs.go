@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,7 @@ func (h Handler) GetPosts(c *gin.Context) {
 
 	blogs, err := h.repo.GetBlogs(ctx, h.cfg.PostLimit, offset)
 	if err != nil {
+		log.Println("Failed to get posts:", err)
 		h.renderError(c, "Something went wrong. Please try again later.")
 		return
 	}
@@ -66,6 +68,7 @@ func (h Handler) GetPost(c *gin.Context) {
 	postID := c.Param("id")
 	post, err := h.repo.GetBlog(c.Request.Context(), postID)
 	if err != nil {
+		log.Println("Failed to get post:", err)
 		h.renderError(c, "Post not found.")
 		return
 	}
