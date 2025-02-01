@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"github.com/thiri-lwin/gopher-tech-blog/internal/config"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/handlers"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/repo"
 )
 
-func New(dbURI string) *gin.Engine {
+func New(cfg *config.Config) *gin.Engine {
 	router := gin.New()
 
 	tmpl, err := loadTemplates("templates")
@@ -26,8 +27,8 @@ func New(dbURI string) *gin.Engine {
 
 	router.OPTIONS("/*any", responseOK())
 
-	db := repo.New(dbURI)
-	postHandler := handlers.NewHandler(db, tmpl)
+	db := repo.New(cfg.DatabaseURI)
+	postHandler := handlers.NewHandler(cfg, db, tmpl)
 	router.GET("/", postHandler.GetPosts)
 	router.GET("/index", postHandler.GetPosts)       // Home page route
 	router.GET("/about", postHandler.ServeAbout)     // About page route

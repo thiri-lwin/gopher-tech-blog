@@ -51,7 +51,7 @@
                                     {{.Summary}}
                                 </h3>
                             </a>
-                            <p class="post-meta">Posted by <a href="#">{{.Author}}</a> on September 24, 2014</p>
+                            <p class="post-meta">Posted by <a href="#">{{.Author}}</a> on {{.Date}}</p>
                         </div>
                     {{end}}
                 {{else}}
@@ -61,9 +61,16 @@
                 <hr>
                 <!-- Pager -->
                 <ul class="pager">
-                    <li class="next">
-                        <a href="#">Older Posts &rarr;</a>
-                    </li>
+                    {{if .PrevPage}}
+                        <li class="previous">
+                            <a href="/?page={{.PrevPage}}">&larr; Newer Posts</a>
+                        </li>
+                    {{end}}
+                    {{if .NextPage}}
+                        <li class="next">
+                            <a href="/?page={{.NextPage}}">Older Posts &rarr;</a>
+                        </li>
+                    {{end}}
                 </ul>
             </div>
         </div>

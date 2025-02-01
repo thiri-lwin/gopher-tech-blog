@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
 	"time"
@@ -14,6 +13,7 @@ import (
 type Repo interface {
 	GetBlogs(ctx context.Context, limit, page int) ([]Blog, error)
 	GetBlog(ctx context.Context, id string) (Blog, error)
+	GetBlogsCount(ctx context.Context) (int64, error)
 }
 
 type repo struct {
@@ -29,7 +29,7 @@ func New(dbURI string) Repo {
 
 func connectDB(dbURI string) *mongo.Database {
 	clientOptions := options.Client().ApplyURI(dbURI)
-	clientOptions.SetTLSConfig(&tls.Config{InsecureSkipVerify: false})
+	//clientOptions.SetTLSConfig(&tls.Config{InsecureSkipVerify: false})
 
 	// Create a new MongoDB client
 	client, err := mongo.NewClient(clientOptions)
@@ -76,6 +76,6 @@ func newMongoPaginate(limit, page int) *mongoPaginate {
 func (m *mongoPaginate) getPaginatedOpts() *options.FindOptions {
 	opts := options.Find()
 	opts.SetLimit(m.limit)
-	opts.SetSkip(m.page * m.limit)
+	opts.SetSkip(m.page)
 	return opts
 }
