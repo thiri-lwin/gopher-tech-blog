@@ -101,6 +101,7 @@ func (h Handler) renderError(c *gin.Context, errorMessage string) {
 		"BackgroundImage": "/static/img/error-bg.jpg",
 		"Heading":         "Error",
 		"Subheading":      errorMessage,
+		"Status":          "Our team is working to resolve the issue. Please try again later.",
 	}
 	h.tmpl.ExecuteTemplate(c.Writer, "error.html", data)
 }

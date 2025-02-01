@@ -11,6 +11,9 @@ type Config struct {
 	DatabaseURI string `mapstructure:"DB_URI"`
 	Port        int    `mapstructure:"PORT"`
 	PostLimit   int    `mapstructure:"POST_LIMIT"`
+	RedisAddr   string `mapstructure:"REDIS_ADDR"`
+	RedisUser   string `mapstructure:"REDIS_USER"`
+	RedisPass   string `mapstructure:"REDIS_PASS"`
 }
 
 func LoadConfig() *Config {

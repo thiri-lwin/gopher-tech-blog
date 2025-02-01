@@ -11,12 +11,15 @@ import (
 	"github.com/thiri-lwin/gopher-tech-blog/internal/config"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/handlers"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/repo"
+	"github.com/thiri-lwin/gopher-tech-blog/internal/repo/redis"
 )
+
+var tmpl *template.Template
 
 func New(cfg *config.Config) *gin.Engine {
 	router := gin.New()
 
-	tmpl, err := loadTemplates("templates")
+	err := loadTemplates("templates")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,10 +27,16 @@ func New(cfg *config.Config) *gin.Engine {
 	router.Static("/static", "./static")
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+	// init redis
+	redis.InitRedis(cfg.RedisAddr, cfg.RedisUser, cfg.RedisPass)
+
+	router.Use(rateLimitMiddleware)
 
 	router.OPTIONS("/*any", responseOK())
 
+	// Initialize the database
 	db := repo.New(cfg.DatabaseURI)
+
 	postHandler := handlers.NewHandler(cfg, db, tmpl)
 	router.GET("/", postHandler.GetPosts)
 	router.GET("/index", postHandler.GetPosts)       // Home page route
@@ -47,18 +56,19 @@ func responseOK() func(c *gin.Context) {
 }
 
 // Load all templates
-func loadTemplates(templateDir string) (*template.Template, error) {
+func loadTemplates(templateDir string) error {
+	var err error
 	// Glob to match all .html files under the template directory
 	templates, err := filepath.Glob(filepath.Join(templateDir, "*.html"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to load main templates: %w", err)
+		return fmt.Errorf("failed to load main templates: %w", err)
 	}
 
 	// Parse all templates
-	tmpl, err := template.New("").ParseFiles(templates...)
+	tmpl, err = template.New("").ParseFiles(templates...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse templates: %w", err)
+		return fmt.Errorf("failed to parse templates: %w", err)
 	}
 
-	return tmpl, nil
+	return nil
 }
