@@ -17,7 +17,8 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	cfg := Config{}
+	viper.AutomaticEnv() // Automatically read environment variables
+
 	viper.SetConfigFile(".env")
 
 	err := viper.ReadInConfig()
@@ -25,6 +26,7 @@ func LoadConfig() *Config {
 		log.Fatal("Can't find the file .env : ", err)
 	}
 
+	cfg := Config{}
 	err = viper.Unmarshal(&cfg)
 	if err != nil {
 		log.Fatal("Environment can't be loaded: ", err)
