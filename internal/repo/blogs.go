@@ -16,7 +16,7 @@ type Blog struct {
 	Author  string `bson:"author" json:"author"`
 }
 
-func (r *repo) GetBlogs(ctx context.Context) ([]Blog, error) {
+func (r *repo) GetBlogs(ctx context.Context, limit, page int) ([]Blog, error) {
 	var blogs []Blog
 
 	collection := r.db.Collection("posts")
@@ -24,7 +24,9 @@ func (r *repo) GetBlogs(ctx context.Context) ([]Blog, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	cursor, err := collection.Find(ctx, bson.M{})
+	findOptions := newMongoPaginate(limit, page).getPaginatedOpts()
+
+	cursor, err := collection.Find(ctx, bson.M{}, findOptions)
 	if err != nil {
 		return nil, err
 	}

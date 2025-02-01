@@ -1,0 +1,26 @@
+<header class="intro-header" style="background-image: url('{{ .BackgroundImage }}')">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                {{ if .post }}
+                    <div class="post-heading">
+                {{ else }}
+                    <div class="page-heading">
+                {{ end }}
+                    
+                    {{ if .post }}
+                        <h1>{{ .post.Title }}</h1>
+                        <h2 class="subheading">{{ .post.Summary }}</h2>
+                        <span class="meta">Posted by <a href="#">{{ .post.Author }}</a> on </span>
+                    {{ else }}
+                         <h1>{{ .Heading }}</h1>
+                         <hr class="small">
+                         <span class="subheading">{{ .Subheading }}</span>
+                    {{ end }}
+                    
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

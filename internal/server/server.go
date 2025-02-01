@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 	"github.com/thiri-lwin/gopher-tech-blog/internal/repo"
 )
 
-func New(dbUser, dbPassword string) *gin.Engine {
+func New(dbURI string) *gin.Engine {
 	router := gin.New()
 
 	tmpl, err := loadTemplates("templates")
@@ -25,9 +26,7 @@ func New(dbUser, dbPassword string) *gin.Engine {
 
 	router.OPTIONS("/*any", responseOK())
 
-	//public := router.Group("/public/v1")
-
-	db := repo.New(dbUser, dbPassword)
+	db := repo.New(dbURI)
 	postHandler := handlers.NewHandler(db, tmpl)
 	router.GET("/", postHandler.GetPosts)
 	router.GET("/index", postHandler.GetPosts)       // Home page route
@@ -46,29 +45,18 @@ func responseOK() func(c *gin.Context) {
 	}
 }
 
-// Load all templates (including partials)
+// Load all templates
 func loadTemplates(templateDir string) (*template.Template, error) {
 	// Glob to match all .html files under the template directory
 	templates, err := filepath.Glob(filepath.Join(templateDir, "*.html"))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load main templates: %w", err)
 	}
 
-	// Load the main template and all partials
-	tmpl := template.Must(template.New("").ParseFiles(templates...))
-
-	// If you want to load partials separately (e.g., header, footer), you can do so.
-	partialFiles, err := filepath.Glob(filepath.Join(templateDir, "partials", "*.html"))
+	// Parse all templates
+	tmpl, err := template.New("").ParseFiles(templates...)
 	if err != nil {
-		return nil, err
-	}
-
-	// Parse the partials and add them to the main template
-	if len(partialFiles) > 0 {
-		_, err = tmpl.ParseFiles(partialFiles...)
-		if err != nil {
-			return nil, err
-		}
+		return nil, fmt.Errorf("failed to parse templates: %w", err)
 	}
 
 	return tmpl, nil

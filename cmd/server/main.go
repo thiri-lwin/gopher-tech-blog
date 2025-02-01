@@ -16,14 +16,13 @@ func main() {
 	if err != nil {
 		fmt.Println("Error loading .env file")
 	}
-	mongoUser := os.Getenv("DB_USER")
-	mongoPassword := os.Getenv("DB_PASSWORD")
+	dbURI := os.Getenv("DB_URI")
 	port := os.Getenv("PORT")
 	postInt, err := strconv.Atoi(port)
 	if err != nil {
 		log.Fatalf("Failed to convert port to integer: %v", err)
 	}
-	s := server.New(mongoUser, mongoPassword)
+	s := server.New(dbURI)
 	log.Println("Starting the server...")
 	if err := endless.ListenAndServe(fmt.Sprintf(":%d", postInt), s); err != nil {
 		panic(err)

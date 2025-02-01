@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
-	"net/url"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,7 +12,7 @@ import (
 )
 
 type Repo interface {
-	GetBlogs(ctx context.Context) ([]Blog, error)
+	GetBlogs(ctx context.Context, limit, page int) ([]Blog, error)
 	GetBlog(ctx context.Context, id string) (Blog, error)
 }
 
@@ -21,20 +20,15 @@ type repo struct {
 	db *mongo.Database
 }
 
-func New(dbUser, dbPassword string) Repo {
+func New(dbURI string) Repo {
 	return &repo{
-		db: connectDB(dbUser, dbPassword),
+		db: connectDB(dbURI),
 	}
 
 }
 
-func connectDB(dbUser, dbPassword string) *mongo.Database {
-	// URL-encode password in case it contains special characters
-	encodedPassword := url.QueryEscape(dbPassword)
-
-	// Create MongoDB URI with encoded password
-	clientOptions := options.Client().ApplyURI(fmt.Sprintf("mongodb+srv://%s:%s@mongo-cluster01.fgq10.mongodb.net/tech_blog_db?retryWrites=true&w=majority", dbUser, encodedPassword))
-	//clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+func connectDB(dbURI string) *mongo.Database {
+	clientOptions := options.Client().ApplyURI(dbURI)
 	clientOptions.SetTLSConfig(&tls.Config{InsecureSkipVerify: false})
 
 	// Create a new MongoDB client
@@ -65,4 +59,23 @@ func connectDB(dbUser, dbPassword string) *mongo.Database {
 
 	// Return the database instance
 	return db
+}
+
+type mongoPaginate struct {
+	limit int64
+	page  int64
+}
+
+func newMongoPaginate(limit, page int) *mongoPaginate {
+	return &mongoPaginate{
+		limit: int64(limit),
+		page:  int64(page),
+	}
+}
+
+func (m *mongoPaginate) getPaginatedOpts() *options.FindOptions {
+	opts := options.Find()
+	opts.SetLimit(m.limit)
+	opts.SetSkip(m.page * m.limit)
+	return opts
 }

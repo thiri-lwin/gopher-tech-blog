@@ -6,17 +6,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	limit = 10
+)
+
 func (h Handler) GetPosts(c *gin.Context) {
 	ctx := c.Request.Context()
-	blogs, err := h.repo.GetBlogs(ctx)
+	blogs, err := h.repo.GetBlogs(ctx, limit, 0) // TODO: Implement pagination
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	data := gin.H{
+		"BackgroundImage": "static/img/home-bg.jpg",
+		"Heading":         "Gopher Blog",
+		"Subheading":      "Tech Journal by A Gopher",
+		"posts":           blogs,
+	}
 	// Render the index template and pass the posts to it
-	h.tmpl.ExecuteTemplate(c.Writer, "index.html", gin.H{
-		"posts": blogs, // Assuming you have a list of posts
-	})
+	h.tmpl.ExecuteTemplate(c.Writer, "index.html", data)
 }
 
 // GetPost handles displaying a single post based on its ID
@@ -28,19 +37,29 @@ func (h Handler) GetPost(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
 		return
 	}
-
 	// Render the post template with the post data
 	h.tmpl.ExecuteTemplate(c.Writer, "post.html", gin.H{
-		"post": post,
+		"BackgroundImage": "/static/img/post-bg.jpg",
+		"post":            post,
 	})
 }
 
 // ServeAbout serves the about page
 func (h Handler) ServeAbout(c *gin.Context) {
-	h.tmpl.ExecuteTemplate(c.Writer, "about.html", nil)
+	data := gin.H{
+		"BackgroundImage": "static/img/about-bg.jpg",
+		"Heading":         "About Me",
+		"Subheading":      "This is what I do.",
+	}
+	h.tmpl.ExecuteTemplate(c.Writer, "about.html", data)
 }
 
 // ServeContact serves the contact page
 func (h Handler) ServeContact(c *gin.Context) {
-	h.tmpl.ExecuteTemplate(c.Writer, "contact.html", nil)
+	data := gin.H{
+		"BackgroundImage": "static/img/contact-bg.jpg",
+		"Heading":         "Contact Me",
+		"Subheading":      "Have questions? I have answers (maybe).",
+	}
+	h.tmpl.ExecuteTemplate(c.Writer, "contact.html", data)
 }
