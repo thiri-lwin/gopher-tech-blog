@@ -57,6 +57,15 @@ func responseOK() func(c *gin.Context) {
 
 // Load all templates
 func loadTemplates(templateDir string) error {
+	// Define a function map for Go templates
+	funcMap := template.FuncMap{
+		"safeHTML": func(text string) template.HTML {
+			return template.HTML(text)
+		},
+	}
+
+	// Route to serve the page
+
 	var err error
 	// Glob to match all .html files under the template directory
 	templates, err := filepath.Glob(filepath.Join(templateDir, "*.html"))
@@ -65,7 +74,7 @@ func loadTemplates(templateDir string) error {
 	}
 
 	// Parse all templates
-	tmpl, err = template.New("").ParseFiles(templates...)
+	tmpl, err = template.New("").Funcs(funcMap).ParseFiles(templates...)
 	if err != nil {
 		return fmt.Errorf("failed to parse templates: %w", err)
 	}

@@ -31,8 +31,8 @@ func rateLimitMiddleware(c *gin.Context) {
 		redis.RDB.Expire(ctx, key, time.Minute)
 	}
 
-	// Limit to 5 requests per minute
-	if count > 5 {
+	// Limit to 10 requests per minute
+	if count > 10 {
 		data := gin.H{
 			"BackgroundImage": "/static/img/error-bg.jpg",
 			"Heading":         "Error",
