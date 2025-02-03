@@ -2,11 +2,20 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
+
+type ContactForm struct {
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Message string `json:"message"`
+	Phone   string `json:"phone"`
+}
 
 // GetPosts handles displaying all posts
 func (h Handler) GetPosts(c *gin.Context) {
@@ -23,7 +32,7 @@ func (h Handler) GetPosts(c *gin.Context) {
 	prevPage, nextPage := h.getPaginationLinks(ctx, page, offset)
 
 	data := gin.H{
-		"BackgroundImage": "static/img/home-bg.jpg",
+		"BackgroundImage": fmt.Sprintf("%s/home-bg.jpg", h.cfg.ImageURL),
 		"Heading":         "Gopher Blog",
 		"Subheading":      "Tech Journal by A Gopher",
 		"posts":           blogs,
@@ -74,7 +83,7 @@ func (h Handler) GetPost(c *gin.Context) {
 	}
 	// Render the post template with the post data
 	h.tmpl.ExecuteTemplate(c.Writer, "post.html", gin.H{
-		"BackgroundImage": "/static/img/post-bg.jpg",
+		"BackgroundImage": fmt.Sprintf("%s/post-bg.jpg", h.cfg.ImageURL),
 		"post":            post,
 	})
 }
@@ -82,7 +91,7 @@ func (h Handler) GetPost(c *gin.Context) {
 // ServeAbout serves the about page
 func (h Handler) ServeAbout(c *gin.Context) {
 	data := gin.H{
-		"BackgroundImage": "static/img/about-bg.jpg",
+		"BackgroundImage": fmt.Sprintf("%s/about-bg.jpg", h.cfg.ImageURL),
 		"Heading":         "About Me",
 		"Subheading":      "This is what I do.",
 	}
@@ -92,7 +101,7 @@ func (h Handler) ServeAbout(c *gin.Context) {
 // ServeContact serves the contact page
 func (h Handler) ServeContact(c *gin.Context) {
 	data := gin.H{
-		"BackgroundImage": "static/img/contact-bg.jpg",
+		"BackgroundImage": fmt.Sprintf("%s/contact-bg.jpg", h.cfg.ImageURL),
 		"Heading":         "Contact Me",
 		"Subheading":      "Have questions? I have answers (maybe).",
 	}
@@ -101,10 +110,28 @@ func (h Handler) ServeContact(c *gin.Context) {
 
 func (h Handler) renderError(c *gin.Context, errorMessage string) {
 	data := gin.H{
-		"BackgroundImage": "/static/img/error-bg.jpg",
+		"BackgroundImage": fmt.Sprintf("%s/error-bg.jpg", h.cfg.ImageURL),
 		"Heading":         "Error",
 		"Subheading":      errorMessage,
 		"Status":          "Our team is working to resolve the issue. Please try again later.",
 	}
 	h.tmpl.ExecuteTemplate(c.Writer, "error.html", data)
+}
+
+func (h Handler) SendMessage(c *gin.Context) {
+	var form ContactForm
+	if err := c.ShouldBindJSON(&form); err != nil {
+		log.Println("Failed to bind form data:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid form data"})
+		return
+	}
+
+	// Send the message to the admin
+	if err := h.emailSender.SendEmail(h.cfg.AdminEmail, "Gopher Tech Blog Contact Form Submission", fmt.Sprintf("Name: %s\nEmail: %s\nPhone: %s\nMessage: %s", form.Name, form.Email, form.Phone, form.Message)); err != nil {
+		log.Println("Failed to send email:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email"})
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/contact")
 }

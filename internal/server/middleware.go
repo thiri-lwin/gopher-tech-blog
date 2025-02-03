@@ -1,48 +1,64 @@
 package server
 
 import (
+	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/thiri-lwin/gopher-tech-blog/internal/config"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/repo/redis"
 )
 
-// Middleware for rate limiting
-func rateLimitMiddleware(c *gin.Context) {
+const (
+	rateLimit                = 15
+	rateLimitSendMessage     = 2
+	rateLimitDuration        = time.Minute
+	rateLimitMessageDuration = time.Hour
+)
+
+func rateLimitMW(c *gin.Context) {
+	handleRateLimit(c, "rate_limit:", rateLimit, rateLimitDuration)
+}
+
+func rateLimitSendMessageMW(c *gin.Context) {
+	handleRateLimit(c, "rate_limit_send_message:", rateLimitSendMessage, rateLimitMessageDuration)
+}
+
+func handleRateLimit(c *gin.Context, keyPrefix string, limit int, duration time.Duration) {
 	ctx := c.Request.Context()
 	ip := c.ClientIP()
-	key := "rate_limit:" + ip
+	key := keyPrefix + ip
 
 	// Increment request count and set expiration
 	count, err := redis.RDB.Incr(ctx, key).Result()
 	if err != nil {
-		data := gin.H{
-			"BackgroundImage": "/static/img/error-bg.jpg",
-			"Heading":         "Error",
-			"Subheading":      "Something went wrong. Please try again later.",
-		}
-		tmpl.ExecuteTemplate(c.Writer, "error.html", data)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Something went wrong. Please try again later."})
 		c.Abort()
 		return
 	}
 
 	if count == 1 {
 		// Set expiration time for the key on the first request
-		redis.RDB.Expire(ctx, key, time.Minute)
+		redis.RDB.Expire(ctx, key, duration)
 	}
-
-	// Limit to 10 requests per minute
-	if count > 10 {
-		data := gin.H{
-			"BackgroundImage": "/static/img/error-bg.jpg",
-			"Heading":         "Error",
-			"Subheading":      "Too many requests, please slow down.",
-			"Status":          "You've hit the limit. Contact us for unlimited access!",
-		}
-		tmpl.ExecuteTemplate(c.Writer, "error.html", data)
+	// Limit requests
+	if count > int64(limit) {
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests, please slow down."})
 		c.Abort()
 		return
 	}
 
 	c.Next()
+}
+
+func renderError(c *gin.Context, subheading string) {
+	data := gin.H{
+		"BackgroundImage": fmt.Sprintf("%s/error-bg.jpg", config.ImageURL),
+		"Heading":         "Error",
+		"Subheading":      subheading,
+		"Status":          "You've hit the limit. Contact us for unlimited access!",
+	}
+	tmpl.ExecuteTemplate(c.Writer, "error.html", data)
+	c.Abort()
 }

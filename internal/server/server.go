@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/config"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/handlers"
+	"github.com/thiri-lwin/gopher-tech-blog/internal/pkg/mailsender"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/repo"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/repo/redis"
 )
@@ -30,19 +31,23 @@ func New(cfg *config.Config) *gin.Engine {
 	// init redis
 	redis.InitRedis(cfg.RedisAddr, cfg.RedisUser, cfg.RedisPass)
 
-	router.Use(rateLimitMiddleware)
+	router.Use(rateLimitMW)
 
 	router.OPTIONS("/*any", responseOK())
 
 	// Initialize the database
 	db := repo.New(cfg.DatabaseURI)
 
-	postHandler := handlers.NewHandler(cfg, db, tmpl)
+	// init email sender
+	emailSender := mailsender.NewEmailSender(cfg.SMTPServer, cfg.SMTPPort, cfg.EmailFrom, cfg.EmailPass)
+
+	postHandler := handlers.NewHandler(cfg, db, emailSender, tmpl)
 	router.GET("/", postHandler.GetPosts)
-	router.GET("/index", postHandler.GetPosts)       // Home page route
-	router.GET("/about", postHandler.ServeAbout)     // About page route
-	router.GET("/contact", postHandler.ServeContact) // Contact page route
-	router.GET("/post/:id", postHandler.GetPost)     // Post page route
+	router.GET("/index", postHandler.GetPosts)                               // Home page route
+	router.GET("/about", postHandler.ServeAbout)                             // About page route
+	router.GET("/contact", postHandler.ServeContact)                         // Contact page route
+	router.GET("/post/:id", postHandler.GetPost)                             // Post page route
+	router.POST("/contact", rateLimitSendMessageMW, postHandler.SendMessage) // Contact form submission route
 
 	return router
 }
