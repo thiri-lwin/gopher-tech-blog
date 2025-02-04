@@ -46,8 +46,10 @@ func New(cfg *config.Config) *gin.Engine {
 	router.GET("/index", postHandler.GetPosts)                               // Home page route
 	router.GET("/about", postHandler.ServeAbout)                             // About page route
 	router.GET("/contact", postHandler.ServeContact)                         // Contact page route
-	router.GET("/post/:id", postHandler.GetPost)                             // Post page route
+	router.GET("/posts/:id", postHandler.GetPost)                            // Post page route
 	router.POST("/contact", rateLimitSendMessageMW, postHandler.SendMessage) // Contact form submission route
+	router.POST("/posts/:id/like", postHandler.LikePost)                     // Like post route
+	router.POST("/posts/:id/comment", postHandler.CommentPost)               // Comment post route
 
 	return router
 }

@@ -18,14 +18,14 @@ const (
 )
 
 func rateLimitMW(c *gin.Context) {
-	handleRateLimit(c, "rate_limit:", rateLimit, rateLimitDuration)
+	handleRateLimit(c, "rate_limit:", rateLimit, rateLimitDuration, true)
 }
 
 func rateLimitSendMessageMW(c *gin.Context) {
-	handleRateLimit(c, "rate_limit_send_message:", rateLimitSendMessage, rateLimitMessageDuration)
+	handleRateLimit(c, "rate_limit_send_message:", rateLimitSendMessage, rateLimitMessageDuration, false)
 }
 
-func handleRateLimit(c *gin.Context, keyPrefix string, limit int, duration time.Duration) {
+func handleRateLimit(c *gin.Context, keyPrefix string, limit int, duration time.Duration, errTmpl bool) {
 	ctx := c.Request.Context()
 	ip := c.ClientIP()
 	key := keyPrefix + ip
@@ -33,6 +33,11 @@ func handleRateLimit(c *gin.Context, keyPrefix string, limit int, duration time.
 	// Increment request count and set expiration
 	count, err := redis.RDB.Incr(ctx, key).Result()
 	if err != nil {
+		if errTmpl {
+			renderError(c, "Something went wrong. Please try again later.")
+			c.Abort()
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Something went wrong. Please try again later."})
 		c.Abort()
 		return
@@ -44,6 +49,11 @@ func handleRateLimit(c *gin.Context, keyPrefix string, limit int, duration time.
 	}
 	// Limit requests
 	if count > int64(limit) {
+		if errTmpl {
+			renderError(c, "Too many requests, please slow down.")
+			c.Abort()
+			return
+		}
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests, please slow down."})
 		c.Abort()
 		return

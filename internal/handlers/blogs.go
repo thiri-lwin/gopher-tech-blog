@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	repo "github.com/thiri-lwin/gopher-tech-blog/internal/repo"
 )
 
 type ContactForm struct {
@@ -75,7 +76,13 @@ func (h Handler) getPaginationLinks(ctx context.Context, page, offset int) (int,
 func (h Handler) GetPost(c *gin.Context) {
 	// Get the post ID from the URL parameter
 	postID := c.Param("id")
-	post, err := h.repo.GetBlog(c.Request.Context(), postID)
+	postIDInt, err := strconv.Atoi(postID)
+	if err != nil {
+		log.Println("Failed to convert post ID to integer:", err)
+		h.renderError(c, "Post not found.")
+		return
+	}
+	post, err := h.repo.GetBlog(c.Request.Context(), postIDInt)
 	if err != nil {
 		log.Println("Failed to get post:", err)
 		h.renderError(c, "Post not found.")
@@ -134,4 +141,44 @@ func (h Handler) SendMessage(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusFound, "/contact")
+}
+
+// LikePost handles liking a post
+func (h Handler) LikePost(c *gin.Context) {
+	postID := c.Param("id")
+	postIDInt, err := strconv.Atoi(postID)
+	if err != nil {
+		log.Println("Failed to convert post ID to integer:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
+		return
+	}
+	likes, err := h.repo.LikeBlog(c.Request.Context(), postIDInt)
+	if err != nil {
+		log.Println("Failed to like post:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like post"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"likes": likes})
+}
+
+// CommentPost handles commenting on a post
+func (h Handler) CommentPost(c *gin.Context) {
+	postID := c.Param("id")
+	postIDInt, err := strconv.Atoi(postID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
+		return
+	}
+	var comment repo.Comment
+	if err := c.ShouldBindJSON(&comment); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+	comment.PostID = postIDInt
+	err = h.repo.CommentBlog(c.Request.Context(), comment)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add comment"})
+		return
+	}
+	c.JSON(http.StatusOK, comment)
 }

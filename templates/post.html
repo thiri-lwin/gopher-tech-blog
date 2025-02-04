@@ -45,6 +45,27 @@
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     {{ .post.Content | safeHTML }}
                     <hr>
+                    <button id="like-button" class="btn btn-primary">
+                        <i class="fa fa-thumbs-up"></i> Like (<span id="like-count">{{ .post.Likes }}</span>)
+                    </button>
+                    <hr>
+                    <h3>Comments</h3>
+                    <div id="comments">
+                        {{ range .post.Comments }}
+                            <div class="comment">
+                                <p><strong>Anonymous User{{ .UserID }}</strong>: {{ .Content }}</p>
+                            </div>
+                        {{ end }}
+                    </div>
+                    <hr>
+                    <form id="comment-form">
+                        <div class="form-group">
+                            <label for="comment-content">Comment:</label>
+                            <textarea class="form-control" id="comment-content" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                    <hr>
                     <a href="javascript:history.back()" class="btn btn-primary"><i class="fa fa-arrow-left"></i> Go Back</a>
                 </div>
             </div>
@@ -61,6 +82,12 @@
 
     <!-- Custom Theme JavaScript -->
     <script src="/static/js/clean-blog.min.js"></script>
+
+    <!-- External JavaScript -->
+    <script>
+        const postID = "{{ .post.ID }}";
+    </script>
+    <script src="/static/js/post.min.js"></script>
 
 </body>
 
