@@ -25,9 +25,11 @@ type Config struct {
 	SMTPServer string `mapstructure:"SMTP_SERVER"`
 	SMTPPort   int    `mapstructure:"SMTP_PORT"`
 
-	EmailFrom  string `mapstructure:"EMAIL_FROM"`
-	EmailPass  string `mapstructure:"EMAIL_PASS"`
-	AdminEmail string `mapstructure:"ADMIN_EMAIL"`
+	EmailFrom         string `mapstructure:"EMAIL_FROM"`
+	EmailPass         string `mapstructure:"EMAIL_PASS"`
+	AdminEmail        string `mapstructure:"ADMIN_EMAIL"`
+	JWTKey            string `mapstructure:"JWT_KEY"`
+	JWTExpirationTime int    `mapstructure:"JWT_EXPIRATION_TIME"`
 }
 
 func LoadConfig() *Config {

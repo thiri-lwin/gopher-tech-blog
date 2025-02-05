@@ -86,6 +86,7 @@
     <!-- External JavaScript -->
     <script>
         const postID = "{{ .post.ID }}";
+        const isAuthenticated = "{{ .IsAuthenticated }}" === "true";
     </script>
     <script src="/static/js/post.min.js"></script>
 
