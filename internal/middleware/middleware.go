@@ -14,8 +14,10 @@ import (
 )
 
 type RequestMeta struct {
-	IsAuthenticated bool
-	Email           string
+	UserID    int
+	Email     string
+	FirstName string
+	LastName  string
 }
 
 const (
@@ -104,8 +106,10 @@ func AuthMiddleware(jwtKey string) gin.HandlerFunc {
 
 		// Set the username in the context
 		c.Set("request_meta", RequestMeta{
-			IsAuthenticated: true,
-			Email:           claims.Email,
+			UserID:    claims.UserID,
+			Email:     claims.Email,
+			FirstName: claims.FirstName,
+			LastName:  claims.LastName,
 		})
 		c.Next()
 	}

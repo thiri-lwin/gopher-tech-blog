@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(data => {
                 document.getElementById("comments").innerHTML += `
                     <div class="comment">
-                        <p><strong>Anonymous User</strong>: ${data.content}</p>
+                        <p><strong>${data.user_name}</strong>: ${data.content}</p>
                     </div>
                 `;
                 document.getElementById("comment-form").reset();
