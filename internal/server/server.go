@@ -12,7 +12,7 @@ import (
 	"github.com/thiri-lwin/gopher-tech-blog/internal/handlers"
 	mw "github.com/thiri-lwin/gopher-tech-blog/internal/middleware"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/pkg/mailsender"
-	"github.com/thiri-lwin/gopher-tech-blog/internal/repo"
+	repo "github.com/thiri-lwin/gopher-tech-blog/internal/repo/postgres"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/repo/redis"
 )
 
@@ -32,9 +32,9 @@ func New(cfg *config.Config) *gin.Engine {
 	// init redis
 	redis.InitRedis(cfg.RedisAddr, cfg.RedisUser, cfg.RedisPass)
 
-	router.Use(func(c *gin.Context) {
-		mw.RateLimitMW(c, tmpl)
-	})
+	// router.Use(func(c *gin.Context) {
+	// 	mw.RateLimitMW(c, tmpl)
+	// })
 
 	router.Use(mw.AuthMiddleware(cfg.JWTKey))
 
@@ -53,12 +53,14 @@ func New(cfg *config.Config) *gin.Engine {
 	router.GET("/contact", handler.ServeContact) // Contact page route
 	router.GET("/posts/:id", handler.GetPost)    // Post page route
 	router.GET("/signin", handler.ServeSignIn)   // SignIn page
+	router.GET("/signup", handler.ServeSignUp)   // SignUp page
 	router.GET("/logout", handler.Logout)
 
 	router.POST("/contact", mw.RateLimitSendMessageMW, handler.SendMessage) // Contact form submission route
 	router.POST("/posts/:id/like", handler.LikePost)                        // Like post route
 	router.POST("/posts/:id/comment", handler.CommentPost)
 	router.POST("/signin", handler.SignIn) // SignIn User
+	router.POST("/signup", handler.SignUp)
 
 	return router
 }
