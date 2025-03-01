@@ -130,9 +130,13 @@ func (h Handler) Logout(c *gin.Context) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Expires:  time.Unix(0, 0), // Set an expiration time in the past
-		MaxAge:   -1,              // Important: MaxAge=-1 removes the cookie immediately
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
 	})
-	c.Redirect(http.StatusPermanentRedirect, "/")
-	return
+
+	c.Writer.Header().Set("Clear-Site-Data", `"cookies"`)
+
+	c.Redirect(http.StatusSeeOther, "/")
 }
