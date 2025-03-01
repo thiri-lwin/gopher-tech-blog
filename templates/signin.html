@@ -29,6 +29,7 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
 
@@ -52,6 +53,17 @@
                     </div>
                     <button type="submit" class="btn btn-primary">Sign In</button>
                 </form>
+                <hr>    
+                <div class="text-center" style="margin: 20px 0; font-weight: bold;">OR</div>  
+                <hr>              
+                <div id="g_id_onload"
+                    data-client_id={{.GoogleClientID}}
+                    data-context="signup"
+                    data-ux_mode="popup"
+                    data-callback="handleCredentialResponse"
+                    data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin" data-type="standard"></div>
                 <p class="mt-3">Don't have an account? <a href="/signup">Register here</a></p>
             </div>
         </div>
@@ -67,6 +79,8 @@
 
     <!-- Custom Theme JavaScript -->
     <script src="/static/js/user.min.js"></script>
+
+    <script src="/static/js/auth.js"></script>
 
 </body>
 

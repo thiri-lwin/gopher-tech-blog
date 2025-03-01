@@ -27,6 +27,7 @@ func (h Handler) ServeSignIn(c *gin.Context) {
 		"Heading":         "Welcome back!",
 		"Subheading":      "Please sign in to share your thoughts and connect with others",
 		"IsAuthenticated": false,
+		"GoogleClientID":  h.cfg.GoogleClientID,
 	}
 	h.tmpl.ExecuteTemplate(c.Writer, "signin.html", data)
 }
