@@ -61,7 +61,7 @@ func New(cfg *config.Config) *gin.Engine {
 	routerGroup.GET("/signup", handler.ServeSignUp)   // SignUp page
 	routerGroup.GET("/logout", handler.Logout)
 
-	routerGroup.POST("/posts/:id/like", handler.LikePost) // Like post route
+	routerGroup.POST("/posts/:id/like-toggle", handler.TogglePostLike) // ToggleLike post route
 	routerGroup.POST("/posts/:id/comment", handler.CommentPost)
 	routerGroup.POST("/signin", handler.SignIn) // SignIn User
 	routerGroup.POST("/signup", handler.SignUp)

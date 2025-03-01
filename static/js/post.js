@@ -7,13 +7,14 @@ document.addEventListener("DOMContentLoaded", function () {
             window.location.href = "/signin";
             console.log("user not logged in");
         } else {
-            fetch(`/posts/${postID}/like`, {
+            fetch(`/posts/${postID}/like-toggle`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
             })
             .then(response => response.json())
             .then(data => {
                 document.getElementById("like-count").textContent = data.likes;
+                document.getElementById("like-toggle").textContent = data.liked ? "Unlike" : "Like";
             });
         }
         

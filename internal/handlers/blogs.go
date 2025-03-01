@@ -85,18 +85,26 @@ func (h Handler) GetPost(c *gin.Context) {
 	auth := mw.GetRequestMeta(c)
 	// Get the post ID from the URL parameter
 	postID := c.Param("id")
-	postIDInt, err := strconv.Atoi(postID)
-	if err != nil {
-		log.Println("Failed to convert post ID to integer:", err)
+	postIDInt, convErr := strconv.Atoi(postID)
+	if convErr != nil {
+		log.Println("Failed to convert post ID to integer:", convErr)
 		h.renderError(c, "Post not found.")
 		return
 	}
-	post, err := h.repo.GetBlog(c.Request.Context(), postIDInt)
+
+	var post repo.Blog
+	var err error
+	if auth.UserID == 0 {
+		post, err = h.repo.GetBlog(c.Request.Context(), postIDInt)
+	} else {
+		post, err = h.repo.GetBlogWithUserLikeStatus(c.Request.Context(), auth.UserID, postIDInt)
+	}
 	if err != nil {
 		log.Println("Failed to get post:", err)
 		h.renderError(c, "Post not found.")
 		return
 	}
+
 	// Render the post template with the post data
 	h.tmpl.ExecuteTemplate(c.Writer, "post.html", gin.H{
 		"BackgroundImage": fmt.Sprintf("%s/post-bg.jpg", h.cfg.ImageURL),
@@ -160,8 +168,8 @@ func (h Handler) SendMessage(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/contact")
 }
 
-// LikePost handles liking a post
-func (h Handler) LikePost(c *gin.Context) {
+// TogglePostLike handles like/unlike a post
+func (h Handler) TogglePostLike(c *gin.Context) {
 	auth := mw.GetRequestMeta(c)
 	if auth.UserID <= 0 {
 		log.Println("unauthenticated user")
@@ -175,13 +183,13 @@ func (h Handler) LikePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
 		return
 	}
-	likes, err := h.repo.LikeBlog(c.Request.Context(), auth.UserID, postIDInt)
+	liked, likes, err := h.repo.LikeToggleBlog(c.Request.Context(), auth.UserID, postIDInt)
 	if err != nil {
 		log.Println("Failed to like post:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like post"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"likes": likes})
+	c.JSON(http.StatusOK, gin.H{"likes": likes, "liked": liked})
 }
 
 // CommentPost handles commenting on a post

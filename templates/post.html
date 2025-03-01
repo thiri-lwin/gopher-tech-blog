@@ -46,7 +46,11 @@
                     {{ .post.Content | safeHTML }}
                     <hr>
                     <button id="like-button" class="btn btn-primary">
-                        <i class="fa fa-thumbs-up"></i> Like (<span id="like-count">{{ .post.Likes }}</span>)
+                        {{ if .post.LikedByUser }}
+                            <i class="fa fa-thumbs-up"></i> <span id="like-toggle">Unlike</span> (<span id="like-count">{{ .post.Likes }}</span>)
+                        {{ else }}
+                            <i class="fa fa-thumbs-up"></i> <span id="like-toggle">Like</span> (<span id="like-count">{{ .post.Likes }}</span>)
+                        {{ end }}
                     </button>
                     <hr>
                     <h3>Comments</h3>
