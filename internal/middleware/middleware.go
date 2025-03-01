@@ -21,10 +21,10 @@ type RequestMeta struct {
 }
 
 const (
-	rateLimit                = 15
+	rateLimit                = 30
 	rateLimitSendMessage     = 2
 	rateLimitDuration        = time.Minute
-	rateLimitMessageDuration = time.Hour
+	rateLimitMessageDuration = 30 * time.Minute
 )
 
 func RateLimitMW(c *gin.Context, tmpl *template.Template) {

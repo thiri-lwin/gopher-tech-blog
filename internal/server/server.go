@@ -47,20 +47,26 @@ func New(cfg *config.Config) *gin.Engine {
 	emailSender := mailsender.NewEmailSender(cfg.SMTPServer, cfg.SMTPPort, cfg.EmailFrom, cfg.EmailPass)
 
 	handler := handlers.NewHandler(cfg, db, emailSender, tmpl)
-	router.GET("/", handler.GetPosts)
-	router.GET("/index", handler.GetPosts)       // Home page route
-	router.GET("/about", handler.ServeAbout)     // About page route
-	router.GET("/contact", handler.ServeContact) // Contact page route
-	router.GET("/posts/:id", handler.GetPost)    // Post page route
-	router.GET("/signin", handler.ServeSignIn)   // SignIn page
-	router.GET("/signup", handler.ServeSignUp)   // SignUp page
-	router.GET("/logout", handler.Logout)
+
+	routerGroup := router.Group("/")
+	routerGroup.Use(func(c *gin.Context) {
+		mw.RateLimitMW(c, tmpl)
+	})
+	routerGroup.GET("/", handler.GetPosts)
+	routerGroup.GET("/index", handler.GetPosts)       // Home page route
+	routerGroup.GET("/about", handler.ServeAbout)     // About page route
+	routerGroup.GET("/contact", handler.ServeContact) // Contact page route
+	routerGroup.GET("/posts/:id", handler.GetPost)    // Post page route
+	routerGroup.GET("/signin", handler.ServeSignIn)   // SignIn page
+	routerGroup.GET("/signup", handler.ServeSignUp)   // SignUp page
+	routerGroup.GET("/logout", handler.Logout)
+
+	routerGroup.POST("/posts/:id/like", handler.LikePost) // Like post route
+	routerGroup.POST("/posts/:id/comment", handler.CommentPost)
+	routerGroup.POST("/signin", handler.SignIn) // SignIn User
+	routerGroup.POST("/signup", handler.SignUp)
 
 	router.POST("/contact", mw.RateLimitSendMessageMW, handler.SendMessage) // Contact form submission route
-	router.POST("/posts/:id/like", handler.LikePost)                        // Like post route
-	router.POST("/posts/:id/comment", handler.CommentPost)
-	router.POST("/signin", handler.SignIn) // SignIn User
-	router.POST("/signup", handler.SignUp)
 
 	return router
 }
