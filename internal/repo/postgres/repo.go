@@ -17,7 +17,7 @@ type Repo interface {
 	LikeToggleBlog(ctx context.Context, userID, id int) (bool, int, error) // returns liked status and updated likes count
 	CommentBlog(ctx context.Context, comment Comment) (int, error)
 
-	CreateUser(ctx context.Context, user User) error
+	CreateUser(ctx context.Context, user User) (int, error)
 	GetUser(ctx context.Context, email string) (User, error)
 
 	GetBlogComment(ctx context.Context, id int) (Comment, error)

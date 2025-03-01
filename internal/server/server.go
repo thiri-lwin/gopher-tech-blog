@@ -65,11 +65,11 @@ func New(cfg *config.Config) *gin.Engine {
 	routerGroup.POST("/posts/:id/comment", handler.CommentPost)
 	routerGroup.POST("/signin", handler.SignIn) // SignIn User
 	routerGroup.POST("/signup", handler.SignUp)
+	routerGroup.DELETE("comments/:id", handler.DeleteComment)
+
+	routerGroup.POST("/auth/google-signin", handler.GoogleSignIn)
 
 	router.POST("/contact", mw.RateLimitSendMessageMW, handler.SendMessage) // Contact form submission route
-
-	router.DELETE("comments/:id", handler.DeleteComment)
-
 	return router
 }
 

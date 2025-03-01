@@ -17,15 +17,15 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func (r *repo) CreateUser(ctx context.Context, user User) error {
+func (r *repo) CreateUser(ctx context.Context, user User) (int, error) {
 	query := `INSERT INTO users (first_name, last_name, email, password)
 			  VALUES ($1, $2, $3, $4)
 			  RETURNING id`
 	err := r.db.QueryRow(ctx, query, user.FirstName, user.LastName, user.Email, user.Password).Scan(&user.ID)
 	if err != nil {
-		return fmt.Errorf("failed to insert user: %w", err)
+		return 0, fmt.Errorf("failed to insert user: %w", err)
 	}
-	return nil
+	return user.ID, nil
 }
 
 func (r *repo) GetUser(ctx context.Context, email string) (User, error) {

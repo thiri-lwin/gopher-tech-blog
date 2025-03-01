@@ -30,6 +30,7 @@ type Config struct {
 	AdminEmail        string `mapstructure:"ADMIN_EMAIL"`
 	JWTKey            string `mapstructure:"JWT_KEY"`
 	JWTExpirationTime int    `mapstructure:"JWT_EXPIRATION_TIME"`
+	GoogleClientID    string `mapstructure:"GOOGLE_CLIENT_ID"`
 }
 
 func LoadConfig() *Config {
