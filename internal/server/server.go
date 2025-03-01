@@ -10,8 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/config"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/handlers"
+	mw "github.com/thiri-lwin/gopher-tech-blog/internal/middleware"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/pkg/mailsender"
-	"github.com/thiri-lwin/gopher-tech-blog/internal/repo"
+	repo "github.com/thiri-lwin/gopher-tech-blog/internal/repo/postgres"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/repo/redis"
 )
 
@@ -31,7 +32,11 @@ func New(cfg *config.Config) *gin.Engine {
 	// init redis
 	redis.InitRedis(cfg.RedisAddr, cfg.RedisUser, cfg.RedisPass)
 
-	router.Use(rateLimitMW)
+	// router.Use(func(c *gin.Context) {
+	// 	mw.RateLimitMW(c, tmpl)
+	// })
+
+	router.Use(mw.AuthMiddleware(cfg.JWTKey))
 
 	router.OPTIONS("/*any", responseOK())
 
@@ -41,15 +46,21 @@ func New(cfg *config.Config) *gin.Engine {
 	// init email sender
 	emailSender := mailsender.NewEmailSender(cfg.SMTPServer, cfg.SMTPPort, cfg.EmailFrom, cfg.EmailPass)
 
-	postHandler := handlers.NewHandler(cfg, db, emailSender, tmpl)
-	router.GET("/", postHandler.GetPosts)
-	router.GET("/index", postHandler.GetPosts)                               // Home page route
-	router.GET("/about", postHandler.ServeAbout)                             // About page route
-	router.GET("/contact", postHandler.ServeContact)                         // Contact page route
-	router.GET("/posts/:id", postHandler.GetPost)                            // Post page route
-	router.POST("/contact", rateLimitSendMessageMW, postHandler.SendMessage) // Contact form submission route
-	router.POST("/posts/:id/like", postHandler.LikePost)                     // Like post route
-	router.POST("/posts/:id/comment", postHandler.CommentPost)               // Comment post route
+	handler := handlers.NewHandler(cfg, db, emailSender, tmpl)
+	router.GET("/", handler.GetPosts)
+	router.GET("/index", handler.GetPosts)       // Home page route
+	router.GET("/about", handler.ServeAbout)     // About page route
+	router.GET("/contact", handler.ServeContact) // Contact page route
+	router.GET("/posts/:id", handler.GetPost)    // Post page route
+	router.GET("/signin", handler.ServeSignIn)   // SignIn page
+	router.GET("/signup", handler.ServeSignUp)   // SignUp page
+	router.GET("/logout", handler.Logout)
+
+	router.POST("/contact", mw.RateLimitSendMessageMW, handler.SendMessage) // Contact form submission route
+	router.POST("/posts/:id/like", handler.LikePost)                        // Like post route
+	router.POST("/posts/:id/comment", handler.CommentPost)
+	router.POST("/signin", handler.SignIn) // SignIn User
+	router.POST("/signup", handler.SignUp)
 
 	return router
 }

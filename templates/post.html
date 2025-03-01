@@ -53,7 +53,7 @@
                     <div id="comments">
                         {{ range .post.Comments }}
                             <div class="comment">
-                                <p><strong>Anonymous User{{ .UserID }}</strong>: {{ .Content }}</p>
+                                <p><strong>{{ .UserName }}</strong>: {{ .Content }}</p>
                             </div>
                         {{ end }}
                     </div>
@@ -86,6 +86,7 @@
     <!-- External JavaScript -->
     <script>
         const postID = "{{ .post.ID }}";
+        const isAuthenticated = "{{ .IsAuthenticated }}" === "true";
     </script>
     <script src="/static/js/post.min.js"></script>
 

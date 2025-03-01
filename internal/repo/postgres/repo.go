@@ -13,8 +13,11 @@ type Repo interface {
 	GetBlogs(ctx context.Context, limit, page int) ([]Blog, error)
 	GetBlog(ctx context.Context, id int) (Blog, error)
 	GetBlogsCount(ctx context.Context) (int64, error)
-	LikeBlog(ctx context.Context, id int) (int, error)
+	LikeBlog(ctx context.Context, userID, id int) (int, error)
 	CommentBlog(ctx context.Context, comment Comment) error
+
+	CreateUser(ctx context.Context, user User) error
+	GetUser(ctx context.Context, email string) (User, error)
 }
 
 type repo struct {

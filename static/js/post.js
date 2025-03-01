@@ -3,35 +3,46 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Handle Like Button
     document.getElementById("like-button").addEventListener("click", function () {
-        fetch(`/posts/${postID}/like`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("like-count").textContent = data.likes;
-        });
+        if (!isAuthenticated) {
+            window.location.href = "/signin";
+            console.log("user not logged in");
+        } else {
+            fetch(`/posts/${postID}/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("like-count").textContent = data.likes;
+            });
+        }
+        
     });
 
     // Handle Comment Form Submission
     document.getElementById("comment-form").addEventListener("submit", function (event) {
-        event.preventDefault();
-        const content = document.getElementById("comment-content").value;
-
-        fetch(`/posts/${postID}/comment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content })
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("comments").innerHTML += `
-                <div class="comment">
-                    <p><strong>Anonymous User</strong>: ${data.content}</p>
-                </div>
-            `;
-            document.getElementById("comment-form").reset();
-        });
+        if (!isAuthenticated) {
+            window.location.href = "/signin";
+            console.log("user not logged in");
+        } else {
+            event.preventDefault();
+            const content = document.getElementById("comment-content").value;
+    
+            fetch(`/posts/${postID}/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("comments").innerHTML += `
+                    <div class="comment">
+                        <p><strong>${data.user_name}</strong>: ${data.content}</p>
+                    </div>
+                `;
+                document.getElementById("comment-form").reset();
+            });
+        }
     });
 });
 

@@ -6,7 +6,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/thiri-lwin/gopher-tech-blog/internal/config"
 	emailsender "github.com/thiri-lwin/gopher-tech-blog/internal/pkg/mailsender"
-	repo "github.com/thiri-lwin/gopher-tech-blog/internal/repo"
+	repo "github.com/thiri-lwin/gopher-tech-blog/internal/repo/postgres"
 	rdb "github.com/thiri-lwin/gopher-tech-blog/internal/repo/redis"
 )
 

@@ -16,6 +16,11 @@
                 <li><a href="/index">Home</a></li>
                 <li><a href="/about">About</a></li>
                 <li><a href="/contact">Contact</a></li>
+                {{ if .IsAuthenticated }}
+                    <li><a href="/logout">Logout</a></li>
+                {{ else }}
+                    <li><a href="/signin">Sign In</a></li>
+                {{ end }}
             </ul>
         </div>
     </div>

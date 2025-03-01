@@ -8,7 +8,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	repo "github.com/thiri-lwin/gopher-tech-blog/internal/repo"
+	mw "github.com/thiri-lwin/gopher-tech-blog/internal/middleware"
+	repo "github.com/thiri-lwin/gopher-tech-blog/internal/repo/postgres"
 )
 
 type ContactForm struct {
@@ -18,8 +19,14 @@ type ContactForm struct {
 	Phone   string `json:"phone"`
 }
 
+type CommentResp struct {
+	Content  string `json:"content"`
+	UserName string `json:"user_name"`
+}
+
 // GetPosts handles displaying all posts
 func (h Handler) GetPosts(c *gin.Context) {
+	auth := mw.GetRequestMeta(c)
 	ctx := c.Request.Context()
 	page, offset := h.getPaginationParams(c)
 
@@ -39,6 +46,7 @@ func (h Handler) GetPosts(c *gin.Context) {
 		"posts":           blogs,
 		"PrevPage":        prevPage,
 		"NextPage":        nextPage,
+		"IsAuthenticated": auth.UserID != 0,
 	}
 
 	// Render the index template and pass the posts to it
@@ -74,6 +82,7 @@ func (h Handler) getPaginationLinks(ctx context.Context, page, offset int) (int,
 
 // GetPost handles displaying a single post based on its ID
 func (h Handler) GetPost(c *gin.Context) {
+	auth := mw.GetRequestMeta(c)
 	// Get the post ID from the URL parameter
 	postID := c.Param("id")
 	postIDInt, err := strconv.Atoi(postID)
@@ -92,35 +101,43 @@ func (h Handler) GetPost(c *gin.Context) {
 	h.tmpl.ExecuteTemplate(c.Writer, "post.html", gin.H{
 		"BackgroundImage": fmt.Sprintf("%s/post-bg.jpg", h.cfg.ImageURL),
 		"post":            post,
+		"UserName":        auth.FirstName + " " + auth.LastName,
+		"IsAuthenticated": auth.UserID != 0,
 	})
 }
 
 // ServeAbout serves the about page
 func (h Handler) ServeAbout(c *gin.Context) {
+	auth := mw.GetRequestMeta(c)
 	data := gin.H{
 		"BackgroundImage": fmt.Sprintf("%s/about-bg.jpg", h.cfg.ImageURL),
 		"Heading":         "About Me",
 		"Subheading":      "This is what I do.",
+		"IsAuthenticated": auth.UserID != 0,
 	}
 	h.tmpl.ExecuteTemplate(c.Writer, "about.html", data)
 }
 
 // ServeContact serves the contact page
 func (h Handler) ServeContact(c *gin.Context) {
+	auth := mw.GetRequestMeta(c)
 	data := gin.H{
 		"BackgroundImage": fmt.Sprintf("%s/contact-bg.jpg", h.cfg.ImageURL),
 		"Heading":         "Contact Me",
 		"Subheading":      "Have questions? I have answers (maybe).",
+		"IsAuthenticated": auth.UserID != 0,
 	}
 	h.tmpl.ExecuteTemplate(c.Writer, "contact.html", data)
 }
 
 func (h Handler) renderError(c *gin.Context, errorMessage string) {
+	auth := mw.GetRequestMeta(c)
 	data := gin.H{
 		"BackgroundImage": fmt.Sprintf("%s/error-bg.jpg", h.cfg.ImageURL),
 		"Heading":         "Error",
 		"Subheading":      errorMessage,
 		"Status":          "Our team is working to resolve the issue. Please try again later.",
+		"IsAuthenticated": auth.UserID != 0,
 	}
 	h.tmpl.ExecuteTemplate(c.Writer, "error.html", data)
 }
@@ -145,6 +162,12 @@ func (h Handler) SendMessage(c *gin.Context) {
 
 // LikePost handles liking a post
 func (h Handler) LikePost(c *gin.Context) {
+	auth := mw.GetRequestMeta(c)
+	if auth.UserID <= 0 {
+		log.Println("unauthenticated user")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Please Signin to like the post"})
+	}
+
 	postID := c.Param("id")
 	postIDInt, err := strconv.Atoi(postID)
 	if err != nil {
@@ -152,7 +175,7 @@ func (h Handler) LikePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
 		return
 	}
-	likes, err := h.repo.LikeBlog(c.Request.Context(), postIDInt)
+	likes, err := h.repo.LikeBlog(c.Request.Context(), auth.UserID, postIDInt)
 	if err != nil {
 		log.Println("Failed to like post:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like post"})
@@ -163,6 +186,12 @@ func (h Handler) LikePost(c *gin.Context) {
 
 // CommentPost handles commenting on a post
 func (h Handler) CommentPost(c *gin.Context) {
+	auth := mw.GetRequestMeta(c)
+	if auth.UserID <= 0 {
+		log.Println("unauthenticated user")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Please Signin to comment under the post"})
+	}
+
 	postID := c.Param("id")
 	postIDInt, err := strconv.Atoi(postID)
 	if err != nil {
@@ -171,14 +200,21 @@ func (h Handler) CommentPost(c *gin.Context) {
 	}
 	var comment repo.Comment
 	if err := c.ShouldBindJSON(&comment); err != nil {
+		log.Println("invalid json: ", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 	comment.PostID = postIDInt
+	comment.UserID = auth.UserID
 	err = h.repo.CommentBlog(c.Request.Context(), comment)
 	if err != nil {
+		log.Println("Failed to add comment: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add comment"})
 		return
 	}
-	c.JSON(http.StatusOK, comment)
+	cmtRes := CommentResp{
+		Content:  comment.Content,
+		UserName: auth.FirstName + " " + auth.LastName,
+	}
+	c.JSON(http.StatusOK, cmtRes)
 }
