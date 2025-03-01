@@ -20,8 +20,10 @@ type ContactForm struct {
 }
 
 type CommentResp struct {
+	ID       int    `json:"id"`
 	Content  string `json:"content"`
 	UserName string `json:"user_name"`
+	UserID   int    `json:"user_id"`
 }
 
 // GetPosts handles displaying all posts
@@ -105,13 +107,17 @@ func (h Handler) GetPost(c *gin.Context) {
 		return
 	}
 
-	// Render the post template with the post data
-	h.tmpl.ExecuteTemplate(c.Writer, "post.html", gin.H{
+	resp := gin.H{
 		"BackgroundImage": fmt.Sprintf("%s/post-bg.jpg", h.cfg.ImageURL),
 		"post":            post,
 		"UserName":        auth.FirstName + " " + auth.LastName,
 		"IsAuthenticated": auth.UserID != 0,
-	})
+	}
+	if auth.UserID != 0 {
+		resp["AuthUserID"] = auth.UserID
+	}
+	// Render the post template with the post data
+	h.tmpl.ExecuteTemplate(c.Writer, "post.html", resp)
 }
 
 // ServeAbout serves the about page
@@ -214,15 +220,52 @@ func (h Handler) CommentPost(c *gin.Context) {
 	}
 	comment.PostID = postIDInt
 	comment.UserID = auth.UserID
-	err = h.repo.CommentBlog(c.Request.Context(), comment)
+	commentID, err := h.repo.CommentBlog(c.Request.Context(), comment)
 	if err != nil {
 		log.Println("Failed to add comment: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add comment"})
 		return
 	}
 	cmtRes := CommentResp{
+		ID:       commentID,
 		Content:  comment.Content,
 		UserName: auth.FirstName + " " + auth.LastName,
 	}
 	c.JSON(http.StatusOK, cmtRes)
+}
+
+func (h Handler) DeleteComment(c *gin.Context) {
+	auth := mw.GetRequestMeta(c)
+	if auth.UserID <= 0 {
+		log.Println("unauthenticated user")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Please Signin to delete the comment"})
+	}
+
+	commentID := c.Param("id")
+	commentIDInt, err := strconv.Atoi(commentID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid comment ID"})
+		return
+	}
+
+	// Check if the comment belongs to the user
+	comment, err := h.repo.GetBlogComment(c.Request.Context(), commentIDInt)
+	if err != nil {
+		log.Println("Failed to get comment: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get comment"})
+		return
+	}
+	if comment.UserID != auth.UserID {
+		log.Println("unauthorized user")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized to delete the comment"})
+		return
+	}
+
+	err = h.repo.DeleteComment(c.Request.Context(), commentIDInt)
+	if err != nil {
+		log.Println("Failed to delete comment: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete comment"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Comment deleted successfully"})
 }

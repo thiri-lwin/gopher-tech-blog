@@ -13,6 +13,7 @@
     <link rel="icon" href=
     "https://thiri-lwin.github.io/gopher-tech-blog-bucket/logo.jpg"
             type="image/x-icon" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
     <!-- Bootstrap Core CSS -->
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
@@ -56,10 +57,15 @@
                     <h3>Comments</h3>
                     <div id="comments">
                         {{ range .post.Comments }}
-                            <div class="comment">
-                                <p><strong>{{ .UserName }}</strong>: {{ .Content }}</p>
+                            <div class="comment d-flex align-items-center">
+                                <span class="mb-0"><strong>{{ .UserName }}</strong>: {{ .Content }}</span>
+                                {{ if eq $.AuthUserID .UserID }}
+                                    <button class="btn btn-link text-danger ms-2 p-0 delete-comment" data-comment-id="{{ .ID }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                {{ end }}
                             </div>
-                        {{ end }}
+                        {{ end }}                    
                     </div>
                     <hr>
                     <form id="comment-form">

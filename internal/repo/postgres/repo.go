@@ -15,10 +15,13 @@ type Repo interface {
 	GetBlogWithUserLikeStatus(ctx context.Context, userID, blogID int) (Blog, error) // return blog with liked status by user
 	GetBlogsCount(ctx context.Context) (int64, error)
 	LikeToggleBlog(ctx context.Context, userID, id int) (bool, int, error) // returns liked status and updated likes count
-	CommentBlog(ctx context.Context, comment Comment) error
+	CommentBlog(ctx context.Context, comment Comment) (int, error)
 
 	CreateUser(ctx context.Context, user User) error
 	GetUser(ctx context.Context, email string) (User, error)
+
+	GetBlogComment(ctx context.Context, id int) (Comment, error)
+	DeleteComment(ctx context.Context, id int) error
 }
 
 type repo struct {

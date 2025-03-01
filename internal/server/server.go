@@ -68,6 +68,8 @@ func New(cfg *config.Config) *gin.Engine {
 
 	router.POST("/contact", mw.RateLimitSendMessageMW, handler.SendMessage) // Contact form submission route
 
+	router.DELETE("comments/:id", handler.DeleteComment)
+
 	return router
 }
 

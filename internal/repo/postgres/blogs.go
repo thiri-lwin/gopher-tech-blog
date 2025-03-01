@@ -151,13 +151,13 @@ func (r *repo) LikeToggleBlog(ctx context.Context, userID int, postID int) (bool
 	return liked, count, nil
 }
 
-func (r *repo) CommentBlog(ctx context.Context, comment Comment) error {
+func (r *repo) CommentBlog(ctx context.Context, comment Comment) (int, error) {
 	query := `INSERT INTO comments (post_id, user_id, content) VALUES ($1, $2, $3) RETURNING id`
 	err := r.db.QueryRow(ctx, query, comment.PostID, comment.UserID, comment.Content).Scan(&comment.ID)
 	if err != nil {
-		return fmt.Errorf("failed to add comment: %w", err)
+		return 0, fmt.Errorf("failed to add comment: %w", err)
 	}
-	return nil
+	return comment.ID, nil
 }
 
 func (r *repo) GetBlogWithUserLikeStatus(ctx context.Context, userID int, id int) (Blog, error) {
@@ -194,4 +194,23 @@ func (r *repo) GetBlogWithUserLikeStatus(ctx context.Context, userID int, id int
 	count, _ := r.GetLikes(ctx, id)
 	blog.Likes = count
 	return blog, nil
+}
+
+func (r *repo) GetBlogComment(ctx context.Context, id int) (Comment, error) {
+	query := `SELECT id, post_id, user_id, content FROM comments WHERE id = $1`
+	var comment Comment
+	err := r.db.QueryRow(ctx, query, id).Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content)
+	if err != nil {
+		return Comment{}, fmt.Errorf("failed to get comment: %w", err)
+	}
+	return comment, nil
+}
+
+func (r *repo) DeleteComment(ctx context.Context, id int) error {
+	query := `DELETE FROM comments WHERE id = $1`
+	_, err := r.db.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment: %w", err)
+	}
+	return nil
 }
